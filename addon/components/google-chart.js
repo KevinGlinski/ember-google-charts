@@ -1,34 +1,40 @@
-import Ember from 'ember';
+import { task } from 'ember-concurrency';
+import { inject as service } from '@ember/service';
+import $ from 'jquery';
+import { VERSION } from '@ember/version';
+import Component from '@ember/component';
+import { computed } from '@ember/object';
+import { debounce } from '@ember/runloop';
+import { warn } from '@ember/debug';
 
-const { $, assert, computed, run: { debounce, }, } = Ember;
-const isUsingEmber2 = Ember.VERSION.match(/\b2\.\d+.\d+\b/g);
+import renderChart from 'ember-google-charts/utils/render-chart';
 
-export default Ember.Component.extend({
+const isUsingEmber2 = VERSION.match(/\b2\.\d+.\d+\b/g);
+
+export default Component.extend({
+
+  /* Services */
+
+  googleCharts: service(),
 
   /* Actions */
 
-  chartDidRender: null,
-  packagesDidLoad: null,
+  chartDidRender() {},
+  packagesDidLoad() {},
 
   /* Options */
 
+  design: 'classic', // 'classic' or 'material'
   data: null,
-  defaultOptions: {
-    animation: {
-      duration: 500,
-      startup: false,
-    },
-  },
   options: null,
-  type: null,
+  type: null, // 'area', 'bar', 'line', etc
 
   /* Properties */
 
   chart: null,
-  classNameBindings: ['className'],
-  classNames: ['google-chart'],
-  googleCharts: Ember.inject.service(),
   responsiveResize: true,
+
+  defaultOptions: computed.reads('googleCharts.defaultOptions'),
 
   className: computed('type', function() {
     return `${this.get('type')}-chart`;
@@ -49,11 +55,17 @@ export default Ember.Component.extend({
     return $.extend({}, defaultOptions, options);
   }),
 
-  /* Methods */
+  /* Lifecycle hooks */
+
+  init() {
+    this._super(...arguments);
+    this.classNameBindings = ['className'];
+    this.classNames = ['google-chart'];
+  },
 
   didInsertElement() {
     this._super(...arguments);
-    this.setupDependencies();
+    this.get('setupDependencies').perform();
 
     /* If the Ember version is less than 2.0.0... */
 
@@ -72,17 +84,12 @@ export default Ember.Component.extend({
     this._rerenderChart();
   },
 
-  setupDependencies() {
-    const type = this.get('type');
-    const options = { id: 'setup-dependencies' };
-
-    Ember.warn('You did not specify a chart type', type, options);
-
-    this.get('googleCharts').loadPackages().then(() => {
-      this.sendAction('packagesDidLoad');
-      this._renderChart();
-    });
+  willDestroyElement() {
+    this._super(...arguments);
+    this._teardownChart();
   },
+
+  /* Methods */
 
   /**
   The method that components that extend this component should
@@ -92,40 +99,69 @@ export default Ember.Component.extend({
   @public
   */
 
-  renderChart() {
-    assert('You have created a chart type without a renderChart() method');
-  },
+  renderChart,
 
-  willDestroyElement() {
-    this._super(...arguments);
-    this._teardownChart();
-  },
+  setupDependencies: task(function* () {
+    const { design, type } = this.getProperties('design', 'type');
 
-  _rerenderChart() {
-    if (this.get('chart') && this.get('data')) {
-      this._renderChart();
-    }
-  },
+    warn(`You did not specify a chart type (e.g. 'bar', 'line', etc)`, type, {
+      id: 'ember-google-charts.supply-type',
+    });
+
+    warn(`You did not specify a chart design ('material' or 'classic')`, design, {
+      id: 'ember-google-charts.supply-type',
+    });
+
+    yield this.get('googleCharts').loadPackages();
+
+    this.packagesDidLoad();
+    this.get('_renderChart').perform();
+  }),
+
+  /* Private methods */
 
   _handleResize() {
-    this.$().css({ display: 'flex' });
+    this.$().css({
+      display: 'flex',
+    });
 
-    // Classic charts have an extra parent div
+    /* Classic charts have an extra parent div */
+
     let chartContainer = this.$().children().children().css('position') === 'absolute' ? this.$().children() : this.$().children().children();
-    chartContainer.css({ width: '', flex: 'auto' });
+
+    chartContainer.css({
+      width: '',
+      flex: 'auto',
+    });
 
     this._rerenderChart();
   },
 
-  _renderChart() {
-    const data = this.get('data');
-    const mergedOptions = this.get('mergedOptions');
-
-    this.renderChart(data, mergedOptions).then((chart) => {
-      this.set('chart', chart);
-      this.sendAction('chartDidRender', chart);
-    });
+  _rerenderChart() {
+    if (this.get('chart') && this.get('data')) {
+      this.get('_renderChart').perform();
+    }
   },
+
+  _renderChart: task(function* () {
+    const {
+      data,
+      design,
+      element,
+      mergedOptions,
+      type
+    } = this.getProperties('data', 'design', 'element', 'mergedOptions', 'type')
+
+    const chart = yield this.renderChart(element, {
+      data,
+      design,
+      options: mergedOptions,
+      type,
+    });
+
+    this.set('chart', chart);
+    this.chartDidRender(chart);
+  }),
 
   _teardownChart() {
     const chart = this.get('chart');

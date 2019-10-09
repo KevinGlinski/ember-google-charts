@@ -1,39 +1,37 @@
-import { moduleForComponent, test } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
-import testChartRendering from '../../helpers/sync/test-chart-rendering';
-import testChartOptions from '../../helpers/sync/test-chart-options';
+import { module, test } from 'qunit';
+import { setupRenderingTest } from 'ember-qunit';
+import { assertChart, renderChart } from 'ember-google-charts/test-support';
 
-const data = [
-  ['Task', 'Hours per Day'],
-  ['Work', 11],
-  ['Eat', 2],
-  ['Commute', 2],
-  ['Watch TV', 2],
-  ['Sleep', 7],
-];
+module('Integration | Component | pie chart', function(hooks) {
+  setupRenderingTest(hooks);
 
-moduleForComponent('pie-chart', 'Integration | Component | pie chart', {
-  integration: true,
-});
+  const data = [
+    ['Task', 'Hours per Day'],
+    ['Work', 11],
+    ['Eat', 2],
+    ['Commute', 2],
+    ['Watch TV', 2],
+    ['Sleep', 7],
+  ];
 
-test('Rendering the chart', function(assert) {
+  const options = {
+    title: 'Sales expenses',
+  };
 
-  testChartRendering(assert, {
-    context: this,
-    data,
-    template: hbs`{{pie-chart data=data chartDidRender='chartDidRender'}}`,
-    type: 'pie',
-    usingMaterialCharts: false,
+  test('Rendering the chart', async function(assert) {
+    assert.expect(9);
+
+    this.set('data', data);
+    this.set('options', options);
+
+    const chart = await renderChart(hbs`{{pie-chart data=data options=options}}`);
+
+    assertChart(assert, chart, {
+      data,
+      design: 'classic',
+      options,
+      type: 'pie',
+    });
   });
-
-});
-
-test('Setting options', function(assert) {
-
-  testChartOptions(assert, {
-    context: this,
-    data,
-    template: hbs`{{pie-chart data=data options=options chartDidRender='chartDidRender'}}`,
-  });
-
 });

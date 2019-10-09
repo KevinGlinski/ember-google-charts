@@ -1,42 +1,32 @@
-import { moduleForComponent, test } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
-import testChartRendering from '../../helpers/sync/test-chart-rendering';
-import testChartOptions from '../../helpers/sync/test-chart-options';
+import { module, test } from 'qunit';
+import { setupRenderingTest } from 'ember-qunit';
+import { assertChart, renderChart } from 'ember-google-charts/test-support';
 
-const data = [
-  ['Country', 'Popularity'],
-  ['South America', 600],
-  ['Canada', 500],
-  ['France', 600],
-  ['Russia', 700],
-  ['Australia', 600],
-];
+module('Integration | Component | geo chart', function(hooks) {
+  setupRenderingTest(hooks);
 
-moduleForComponent('geo-chart', 'Integration | Component | geo chart', {
-  integration: true,
-});
+  const data = [
+    ['Country', 'Popularity'],
+    ['South America', 600],
+    ['Canada', 500],
+    ['France', 600],
+    ['Russia', 700],
+    ['Australia', 600],
+  ];
 
-test('Rendering the chart', function(assert) {
+  test('Rendering the chart', async function(assert) {
+    assert.expect(6);
 
-  testChartRendering(assert, {
-    context: this,
-    data,
-    template: hbs`{{geo-chart data=data chartDidRender='chartDidRender'}}`,
-    type: 'geo',
-    usingMaterialCharts: false,
-  });
+    this.set('data', data);
 
-});
+    const chart = await renderChart(hbs`{{geo-chart data=data}}`);
 
-test('Setting options', function(assert) {
-
-  testChartOptions(assert, {
-    context: this,
-    data,
-    options: {
-      height: 134,
-    },
-    template: hbs`{{geo-chart data=data options=options chartDidRender='chartDidRender'}}`,
+    assertChart(assert, chart, {
+      data,
+      design: 'classic',
+      type: 'geo',
+    });
   });
 
 });

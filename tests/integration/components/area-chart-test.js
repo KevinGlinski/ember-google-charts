@@ -1,38 +1,36 @@
-import { moduleForComponent, test } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
-import testChartRendering from '../../helpers/sync/test-chart-rendering';
-import testChartOptions from '../../helpers/sync/test-chart-options';
+import { module, test } from 'qunit';
+import { setupRenderingTest } from 'ember-qunit';
+import { assertChart, renderChart } from 'ember-google-charts/test-support';
 
-const data = [
-  ['Year', 'Sales', 'Expenses'],
-  ['2004', 1000, 400],
-  ['2005', 1170, 460],
-  ['2006', 660, 1120],
-  ['2007', 1030, 540],
-];
+module('Integration | Component | area chart', function(hooks) {
+  setupRenderingTest(hooks);
 
-moduleForComponent('area-chart', 'Integration | Component | area chart', {
-  integration: true,
-});
+  const data = [
+    ['Year', 'Sales', 'Expenses'],
+    ['2004', 1000, 400],
+    ['2005', 1170, 460],
+    ['2006', 660, 1120],
+    ['2007', 1030, 540],
+  ];
 
-test('Rendering the chart', function(assert) {
+  const options = {
+    title: 'Sales expenses',
+  };
 
-  testChartRendering(assert, {
-    context: this,
-    data,
-    template: hbs`{{area-chart data=data chartDidRender='chartDidRender'}}`,
-    type: 'area',
-    usingMaterialCharts: false,
+  test('Rendering the chart', async function(assert) {
+    assert.expect(10);
+
+    this.set('data', data);
+    this.set('options', options);
+
+    const chart = await renderChart(hbs`{{area-chart data=data options=options}}`);
+
+    assertChart(assert, chart, {
+      data,
+      design: 'classic',
+      options,
+      type: 'area',
+    });
   });
-
-});
-
-test('Setting options', function(assert) {
-
-  testChartOptions(assert, {
-    context: this,
-    data,
-    template: hbs`{{area-chart data=data options=options chartDidRender='chartDidRender'}}`,
-  });
-
 });

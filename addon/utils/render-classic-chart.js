@@ -1,31 +1,21 @@
-import Ember from 'ember';
-import VisualizationNames from './visualization-names';
-
-const { RSVP } = Ember;
+import { warn } from '@ember/debug';
+import renderChart from 'ember-google-charts/utils/render-chart';
 
 export default function renderClassicChart(data, options) {
-  return new RSVP.Promise((resolve, reject) => {
-    const { visualization } = window.google;
-    const type = this.get('type');
-    const visualizationName = VisualizationNames[type];
-    const chart = new visualization[visualizationName](this.get('element'));
-    const dataTable = visualization.arrayToDataTable(data);
+  warn(`renderClassicChart() has been deprecated. Use renderChart() instead. See https://github.com/sir-dunxalot/ember-google-charts#custom-charts`, {
+    id: 'ember-google-charts.unified-render-util',
+  });
 
-    visualization.events.addListener(chart, 'error', reject);
+  const {
+    design,
+    element,
+    type,
+  } = this.getProperties('design', 'element', 'type');
 
-    /* For charts that aren't immediately ready, listen for the
-    ready event */
-
-    if (type === 'geo') {
-      visualization.events.addListener(chart, 'ready', function() {
-        resolve(chart);
-      });
-    }
-
-    chart.draw(dataTable, options);
-
-    if (type !== 'geo') {
-      resolve(chart);
-    }
+  return renderChart(element, {
+    data,
+    design,
+    options,
+    type,
   });
 }

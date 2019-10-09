@@ -1,21 +1,37 @@
+/*jshint node:true*/
 /* global require, module */
-var EmberApp = require('ember-cli/lib/broccoli/ember-addon');
+var EmberAddon = require('ember-cli/lib/broccoli/ember-addon');
+var autoprefixer = require('autoprefixer');
+var nodeSass = require('node-sass');
 
 module.exports = function(defaults) {
-  var app = new EmberApp(defaults, {
+  let app = new EmberAddon(defaults, {
     snippetSearchPaths: ['app', 'tests'],
 
     sassOptions: {
-      extension: 'scss',
-      includePaths: [
-        'bower_components/compass-mixins/lib',
-      ],
+      implementation: nodeSass,
     },
 
+    postcssOptions: {
+      compile: {
+        enabled: false
+      },
+      filter: {
+        enabled: true,
+        plugins: [
+          {
+            module: autoprefixer,
+            options: {
+              browsers: ['last 2 version']
+            }
+          }
+        ]
+      }
+    }
   });
 
   /*
-    This build file specifes the options for the dummy test app of this
+    This build file specifies the options for the dummy test app of this
     addon, located in `/tests/dummy`
     This build file does *not* influence how the addon or the app using it
     behave. You most likely want to be modifying `./index.js` or app's build file

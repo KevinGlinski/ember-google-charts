@@ -1,38 +1,36 @@
-import { moduleForComponent, test } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
-import testChartRendering from '../../helpers/sync/test-chart-rendering';
-import testChartOptions from '../../helpers/sync/test-chart-options';
+import { module, test } from 'qunit';
+import { setupRenderingTest } from 'ember-qunit';
+import { assertChart, renderChart } from 'ember-google-charts/test-support';
 
-const data = [
-  ['Element', 'Density', { role: 'style' }],
-  ['Copper', 8.94, '#b87333'],
-  ['Silver', 10.49, 'silver'],
-  ['Gold', 19.30, 'gold'],
-  ['Platinum', 21.45, 'color: #e5e4e2'],
-];
+module('Integration | Component | scatter chart', function(hooks) {
+  setupRenderingTest(hooks);
 
-moduleForComponent('scatter-chart', 'Integration | Component | scatter chart', {
-  integration: true,
-});
+  const data = [
+    ['Element', 'Density', { role: 'style' }],
+    ['Copper', 8.94, '#b87333'],
+    ['Silver', 10.49, 'silver'],
+    ['Gold', 19.30, 'gold'],
+    ['Platinum', 21.45, 'color: #e5e4e2'],
+  ];
 
-test('Rendering the chart', function(assert) {
+  const options = {
+    title: 'Element densities',
+  };
 
-  testChartRendering(assert, {
-    context: this,
-    data,
-    template: hbs`{{scatter-chart data=data chartDidRender='chartDidRender'}}`,
-    type: 'scatter',
-    usingMaterialCharts: true,
+  test('Rendering the chart', async function(assert) {
+    assert.expect(10);
+
+    this.set('data', data);
+    this.set('options', options);
+
+    const chart = await renderChart(hbs`{{scatter-chart data=data options=options}}`);
+
+    assertChart(assert, chart, {
+      data,
+      design: 'material',
+      options,
+      type: 'scatter',
+    });
   });
-
-});
-
-test('Setting options', function(assert) {
-
-  testChartOptions(assert, {
-    context: this,
-    data,
-    template: hbs`{{scatter-chart data=data options=options chartDidRender='chartDidRender'}}`,
-  });
-
 });
